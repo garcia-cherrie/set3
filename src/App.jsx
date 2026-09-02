@@ -49,6 +49,7 @@ function App() {
   const [form, setForm] = useState(initialForm)
   const [items, setItems] = useState([])
   const [submitted, setSubmitted] = useState(false)
+  const [touched, setTouched] = useState({})
   const [view, setView] = useState('form')
   const [selectedId, setSelectedId] = useState(null)
   const [activeItem, setActiveItem] = useState(null)
@@ -111,6 +112,7 @@ function App() {
   function updateField(event) {
     const { name, value } = event.target
     setForm((current) => ({ ...current, [name]: value }))
+    setTouched((current) => ({ ...current, [name]: true }))
   }
 
   function handleSubmit(event) {
@@ -132,11 +134,12 @@ function App() {
     setSelectedId(item.id)
     setView('table')
     setForm(initialForm)
+    setTouched({})
     setSubmitted(false)
   }
 
   function fieldError(name) {
-    return submitted && errors[name] ? (
+    return (submitted || touched[name]) && errors[name] ? (
       <span className="field-error">{errors[name]}</span>
     ) : null
   }
@@ -169,7 +172,7 @@ function App() {
               value={form.gadgetName}
               onChange={updateField}
               placeholder="Pixel Fold"
-              aria-invalid={Boolean(submitted && errors.gadgetName)}
+              aria-invalid={Boolean((submitted || touched.gadgetName) && errors.gadgetName)}
             />
             {fieldError('gadgetName')}
           </label>
@@ -180,7 +183,7 @@ function App() {
               name="category"
               value={form.category}
               onChange={updateField}
-              aria-invalid={Boolean(submitted && errors.category)}
+              aria-invalid={Boolean((submitted || touched.category) && errors.category)}
             >
               <option value="">Select category</option>
               {categories.map((category) => (
@@ -199,7 +202,9 @@ function App() {
               value={form.manufacturer}
               onChange={updateField}
               placeholder="Google"
-              aria-invalid={Boolean(submitted && errors.manufacturer)}
+              aria-invalid={Boolean(
+                (submitted || touched.manufacturer) && errors.manufacturer,
+              )}
             />
             {fieldError('manufacturer')}
           </label>
@@ -214,7 +219,9 @@ function App() {
               value={form.healthRating}
               onChange={updateField}
               placeholder="92"
-              aria-invalid={Boolean(submitted && errors.healthRating)}
+              aria-invalid={Boolean(
+                (submitted || touched.healthRating) && errors.healthRating,
+              )}
             />
             {fieldError('healthRating')}
           </label>
@@ -226,7 +233,7 @@ function App() {
               value={form.techBrand}
               onChange={updateField}
               placeholder="Made by Google"
-              aria-invalid={Boolean(submitted && errors.techBrand)}
+              aria-invalid={Boolean((submitted || touched.techBrand) && errors.techBrand)}
             />
             {fieldError('techBrand')}
           </label>
