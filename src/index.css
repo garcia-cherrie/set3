@@ -1,24 +1,9 @@
 :root {
-  --bg: #ffd6e8;
-  --surface: #fff0f7;
-  --surface-tint: #ffe3ef;
-  --text: #33202a;
-  --muted: #7a3859;
-  --border: #ed8ab6;
-  --pink: #ff5fa6;
-  --pink-soft: #ffc2dc;
-  --pink-strong: #d91f78;
-  --pink-deep: #8f104b;
-  --danger: #b4234f;
-  --success: #347c64;
-  --warning: #a76617;
-  --shadow: 0 24px 70px rgba(206, 55, 124, 0.14);
-
-  color: var(--text);
-  background: var(--bg);
-  font-family: Aptos, Calibri, Arial, sans-serif;
+  color: #1f2937;
+  background: #f8fafc;
+  font: 16px/1.5 system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+  letter-spacing: 0;
   font-synthesis: none;
-  line-height: 1.5;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -29,34 +14,11 @@
 }
 
 body {
-  background: var(--bg);
   margin: 0;
-  min-width: 320px;
 }
 
 button,
 input,
 select {
   font: inherit;
-}
-
-h1,
-h2,
-p {
-  margin-top: 0;
-}
-
-h1 {
-  color: var(--text);
-  font-size: clamp(2.2rem, 6vw, 4.8rem);
-  line-height: 0.95;
-  margin-bottom: 18px;
-  max-width: 780px;
-}
-
-h2 {
-  color: var(--text);
-  font-size: 1.45rem;
-  line-height: 1.15;
-  margin-bottom: 0;
 }
