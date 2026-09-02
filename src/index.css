@@ -16,7 +16,7 @@
 
   color: var(--text);
   background: var(--bg);
-  font-family: 'Times New Roman', Times, serif;
+  font-family: Aptos, Calibri, Arial, sans-serif;
   font-synthesis: none;
   line-height: 1.5;
   text-rendering: optimizeLegibility;
