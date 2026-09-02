@@ -313,9 +313,7 @@ tbody tr:last-child td {
   gap: 18px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(255, 194, 220, 0.9), rgba(255, 240, 247, 0.96)),
-    var(--surface);
+  background: var(--surface-tint);
   padding: 22px;
 }
 
