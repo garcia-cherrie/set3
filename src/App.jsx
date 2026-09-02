@@ -1,4 +1,10 @@
 import { useMemo, useState } from 'react'
+import {
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
 import './App.css'
 
 const initialForm = {
@@ -43,9 +49,49 @@ function App() {
   const [form, setForm] = useState(initialForm)
   const [items, setItems] = useState([])
   const [submitted, setSubmitted] = useState(false)
+  const [view, setView] = useState('form')
+  const [selectedId, setSelectedId] = useState(null)
+
+  const columns = useMemo(
+    () => [
+      {
+        header: 'Gadget',
+        accessorKey: 'gadgetName',
+      },
+      {
+        header: 'Category',
+        accessorKey: 'category',
+      },
+      {
+        header: 'Manufacturer',
+        accessorKey: 'manufacturer',
+      },
+      {
+        header: 'Health',
+        accessorKey: 'healthRating',
+        cell: ({ getValue }) => `${getValue()}/100`,
+      },
+      {
+        header: 'Role',
+        accessorKey: 'userRole',
+      },
+    ],
+    [],
+  )
 
   const errors = useMemo(() => validate(form), [form])
   const hasErrors = Object.keys(errors).length > 0
+  const table = useReactTable({
+    data: items,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 3,
+      },
+    },
+  })
 
   function updateField(event) {
     const { name, value } = event.target
@@ -68,6 +114,8 @@ function App() {
     }
 
     setItems((current) => [...current, item])
+    setSelectedId(item.id)
+    setView('table')
     setForm(initialForm)
     setSubmitted(false)
   }
@@ -191,13 +239,101 @@ function App() {
           </button>
         </form>
 
-        <section className="empty-panel">
-          <p className="eyebrow">Registry Preview</p>
-          <h2>{items.length ? `${items.length} gadget saved` : 'No gadgets yet'}</h2>
-          <p>
-            Submit the form to start building the inventory table required for
-            the next phase.
-          </p>
+        <section className="registry-panel">
+          <div className="panel-toolbar">
+            <div>
+              <p className="eyebrow">Phase 2</p>
+              <h2>Registry Table</h2>
+            </div>
+            <div className="view-switch" aria-label="View controls">
+              <button
+                type="button"
+                className={view === 'form' ? 'active' : ''}
+                onClick={() => setView('form')}
+              >
+                Form
+              </button>
+              <button
+                type="button"
+                className={view === 'table' ? 'active' : ''}
+                onClick={() => setView('table')}
+                disabled={!items.length}
+              >
+                Table
+              </button>
+            </div>
+          </div>
+
+          {items.length && view === 'table' ? (
+            <>
+              <div className="table-wrap">
+                <table>
+                  <thead>
+                    {table.getHeaderGroups().map((headerGroup) => (
+                      <tr key={headerGroup.id}>
+                        {headerGroup.headers.map((header) => (
+                          <th key={header.id}>
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                          </th>
+                        ))}
+                      </tr>
+                    ))}
+                  </thead>
+                  <tbody>
+                    {table.getRowModel().rows.map((row) => (
+                      <tr
+                        key={row.id}
+                        className={row.original.id === selectedId ? 'selected' : ''}
+                        onClick={() => setSelectedId(row.original.id)}
+                      >
+                        {row.getVisibleCells().map((cell) => (
+                          <td key={cell.id}>
+                            {cell.column.columnDef.cell
+                              ? flexRender(
+                                  cell.column.columnDef.cell,
+                                  cell.getContext(),
+                                )
+                              : cell.getValue()}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="pagination-bar">
+                <button
+                  type="button"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  Previous
+                </button>
+                <span>
+                  Page {table.getState().pagination.pageIndex + 1} of{' '}
+                  {table.getPageCount()}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                >
+                  Next
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="empty-state">
+              <h3>{items.length ? 'Table ready' : 'No gadgets yet'}</h3>
+              <p>
+                Submit a valid gadget to open the paginated TanStack registry.
+              </p>
+            </div>
+          )}
         </section>
       </section>
     </main>
