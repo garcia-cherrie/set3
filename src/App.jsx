@@ -147,19 +147,13 @@ function App() {
   return (
     <main className="app-shell">
       <section className="app-header">
-        <p className="eyebrow">Set 3 Practical Exam</p>
         <h1>Tech Gadget Inventory Hub</h1>
-        <p>
-          Register gadgets with clean validation, organized data, and a polished
-          pink interface.
-        </p>
       </section>
 
       <section className="workspace">
         <form className="registry-form" onSubmit={handleSubmit} noValidate>
           <div className="form-heading">
             <div>
-              <p className="eyebrow">Phase 1</p>
               <h2>Gadget Registration</h2>
             </div>
             <span className="entry-count">{items.length} saved</span>
@@ -264,7 +258,6 @@ function App() {
         <section className="registry-panel">
           <div className="panel-toolbar">
             <div>
-              <p className="eyebrow">Phase 2</p>
               <h2>Registry Table</h2>
             </div>
             <div className="view-switch" aria-label="View controls">
@@ -383,7 +376,7 @@ function App() {
 
               <article className="detail-card">
                 <div>
-                  <p className="eyebrow">Phase 3 Active Profile</p>
+                  <p className="eyebrow">Active Profile</p>
                   <h2>{activeItem ? activeItem.gadgetName : 'Select a row'}</h2>
                 </div>
 
