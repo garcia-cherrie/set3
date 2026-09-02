@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   flexRender,
   getCoreRowModel,
@@ -51,6 +51,16 @@ function App() {
   const [submitted, setSubmitted] = useState(false)
   const [view, setView] = useState('form')
   const [selectedId, setSelectedId] = useState(null)
+  const [activeItem, setActiveItem] = useState(null)
+  const [categoryFilter, setCategoryFilter] = useState('All')
+
+  const filteredItems = useMemo(
+    () =>
+      categoryFilter === 'All'
+        ? items
+        : items.filter((item) => item.category === categoryFilter),
+    [categoryFilter, items],
+  )
 
   const columns = useMemo(
     () => [
@@ -82,7 +92,7 @@ function App() {
   const errors = useMemo(() => validate(form), [form])
   const hasErrors = Object.keys(errors).length > 0
   const table = useReactTable({
-    data: items,
+    data: filteredItems,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -92,6 +102,11 @@ function App() {
       },
     },
   })
+
+  useEffect(() => {
+    const nextActiveItem = items.find((item) => item.id === selectedId) ?? null
+    setActiveItem(nextActiveItem)
+  }, [items, selectedId])
 
   function updateField(event) {
     const { name, value } = event.target
@@ -264,6 +279,27 @@ function App() {
             </div>
           </div>
 
+          <div className="filter-bar">
+            <label>
+              <span>Category Filter</span>
+              <select
+                value={categoryFilter}
+                onChange={(event) => setCategoryFilter(event.target.value)}
+              >
+                <option value="All">All categories</option>
+                {categories.map((category) => (
+                  <option key={category} value={category}>
+                    {category}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <span className="filter-result">
+              {filteredItems.length} matching record
+              {filteredItems.length === 1 ? '' : 's'}
+            </span>
+          </div>
+
           {items.length && view === 'table' ? (
             <>
               <div className="table-wrap">
@@ -286,7 +322,12 @@ function App() {
                     {table.getRowModel().rows.map((row) => (
                       <tr
                         key={row.id}
-                        className={row.original.id === selectedId ? 'selected' : ''}
+                        className={[
+                          row.original.id === selectedId ? 'selected' : '',
+                          row.original.category === categoryFilter ? 'filtered' : '',
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
                         onClick={() => setSelectedId(row.original.id)}
                       >
                         {row.getVisibleCells().map((cell) => (
@@ -304,6 +345,13 @@ function App() {
                   </tbody>
                 </table>
               </div>
+
+              {!filteredItems.length ? (
+                <div className="empty-state compact">
+                  <h3>No matching gadgets</h3>
+                  <p>Change the filter to bring records back into the table.</p>
+                </div>
+              ) : null}
 
               <div className="pagination-bar">
                 <button
@@ -325,6 +373,46 @@ function App() {
                   Next
                 </button>
               </div>
+
+              <article className="detail-card">
+                <div>
+                  <p className="eyebrow">Phase 3 Active Profile</p>
+                  <h2>{activeItem ? activeItem.gadgetName : 'Select a row'}</h2>
+                </div>
+
+                {activeItem ? (
+                  <>
+                    <span className="role-badge">{activeItem.userRole}</span>
+                    <dl>
+                      <div>
+                        <dt>Category</dt>
+                        <dd>{activeItem.category}</dd>
+                      </div>
+                      <div>
+                        <dt>Manufacturer</dt>
+                        <dd>{activeItem.manufacturer}</dd>
+                      </div>
+                      <div>
+                        <dt>Health Rating</dt>
+                        <dd>{activeItem.healthRating}/100</dd>
+                      </div>
+                      <div>
+                        <dt>Tech Brand</dt>
+                        <dd>{activeItem.techBrand}</dd>
+                      </div>
+                      <div>
+                        <dt>Registered</dt>
+                        <dd>{activeItem.createdAt}</dd>
+                      </div>
+                    </dl>
+                  </>
+                ) : (
+                  <p className="muted-text">
+                    Click a table row to sync the selected gadget into this
+                    profile card.
+                  </p>
+                )}
+              </article>
             </>
           ) : (
             <div className="empty-state">
