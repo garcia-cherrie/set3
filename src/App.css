@@ -1,9 +1,5 @@
 .app-shell {
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.26) 1px, transparent 1px),
-    linear-gradient(rgba(255, 255, 255, 0.26) 1px, transparent 1px),
-    linear-gradient(135deg, #ff9cc8 0%, #ffd1e4 50%, #ffeff6 100%);
-  background-size: 44px 44px, 44px 44px, auto;
+  background: var(--bg);
   min-height: 100vh;
   padding: 48px;
 }
