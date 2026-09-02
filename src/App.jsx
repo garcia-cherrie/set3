@@ -7,7 +7,9 @@ import {
 } from '@tanstack/react-table'
 import './App.css'
 
-const initialForm = {
+const categories = ['Smartphone', 'Laptop', 'Wearable', 'Audio']
+
+const defaultForm = {
   gadgetName: '',
   category: '',
   manufacturer: '',
@@ -16,84 +18,70 @@ const initialForm = {
   userRole: 'Engineer',
 }
 
-const categories = ['Smartphone', 'Laptop', 'Wearable', 'Audio']
+function checkForm(data) {
+  const error = {}
+  const rating = Number(data.healthRating)
 
-function validate(values) {
-  const errors = {}
-  const rating = Number(values.healthRating)
-
-  if (values.gadgetName.trim().length < 3) {
-    errors.gadgetName = 'Item name must be at least 3 characters.'
+  if (data.gadgetName.trim().length < 3) {
+    error.gadgetName = 'Item name must be at least 3 characters.'
   }
 
-  if (!values.category) {
-    errors.category = 'Choose a gadget category.'
+  if (!data.category) {
+    error.category = 'Choose a gadget category.'
   }
 
-  if (!values.manufacturer.trim()) {
-    errors.manufacturer = 'Manufacturer is required.'
+  if (!data.manufacturer.trim()) {
+    error.manufacturer = 'Manufacturer is required.'
   }
 
-  if (!values.techBrand.trim()) {
-    errors.techBrand = 'Tech brand or company name is required.'
+  if (!data.techBrand.trim()) {
+    error.techBrand = 'Tech brand or company name is required.'
   }
 
-  if (!values.healthRating || Number.isNaN(rating) || rating < 1 || rating > 100) {
-    errors.healthRating = 'Health rating must be between 1 and 100.'
+  if (!data.healthRating || Number.isNaN(rating) || rating < 1 || rating > 100) {
+    error.healthRating = 'Health rating must be between 1 and 100.'
   }
 
-  return errors
+  return error
 }
 
 function App() {
-  const [form, setForm] = useState(initialForm)
-  const [items, setItems] = useState([])
-  const [submitted, setSubmitted] = useState(false)
+  const [form, setForm] = useState(defaultForm)
+  const [gadgets, setGadgets] = useState([])
+  const [showError, setShowError] = useState(false)
   const [touched, setTouched] = useState({})
   const [view, setView] = useState('form')
-  const [selectedId, setSelectedId] = useState(null)
-  const [activeItem, setActiveItem] = useState(null)
-  const [categoryFilter, setCategoryFilter] = useState('All')
+  const [selectedId, setSelectedId] = useState('')
+  const [selectedGadget, setSelectedGadget] = useState(null)
+  const [filter, setFilter] = useState('All')
 
-  const filteredItems = useMemo(
-    () =>
-      categoryFilter === 'All'
-        ? items
-        : items.filter((item) => item.category === categoryFilter),
-    [categoryFilter, items],
-  )
+  const errors = useMemo(() => checkForm(form), [form])
+
+  const filteredGadgets = useMemo(() => {
+    if (filter === 'All') {
+      return gadgets
+    }
+
+    return gadgets.filter((gadget) => gadget.category === filter)
+  }, [filter, gadgets])
 
   const columns = useMemo(
     () => [
-      {
-        header: 'Gadget',
-        accessorKey: 'gadgetName',
-      },
-      {
-        header: 'Category',
-        accessorKey: 'category',
-      },
-      {
-        header: 'Manufacturer',
-        accessorKey: 'manufacturer',
-      },
+      { header: 'Gadget', accessorKey: 'gadgetName' },
+      { header: 'Category', accessorKey: 'category' },
+      { header: 'Manufacturer', accessorKey: 'manufacturer' },
       {
         header: 'Health',
         accessorKey: 'healthRating',
-        cell: ({ getValue }) => `${getValue()}/100`,
+        cell: (info) => `${info.getValue()}/100`,
       },
-      {
-        header: 'Role',
-        accessorKey: 'userRole',
-      },
+      { header: 'Role', accessorKey: 'userRole' },
     ],
     [],
   )
 
-  const errors = useMemo(() => validate(form), [form])
-  const hasErrors = Object.keys(errors).length > 0
   const table = useReactTable({
-    data: filteredItems,
+    data: filteredGadgets,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -105,43 +93,57 @@ function App() {
   })
 
   useEffect(() => {
-    const nextActiveItem = items.find((item) => item.id === selectedId) ?? null
-    setActiveItem(nextActiveItem)
-  }, [items, selectedId])
+    const gadget = gadgets.find((item) => item.id === selectedId)
+    setSelectedGadget(gadget || null)
+  }, [gadgets, selectedId])
 
-  function updateField(event) {
+  function handleChange(event) {
     const { name, value } = event.target
-    setForm((current) => ({ ...current, [name]: value }))
-    setTouched((current) => ({ ...current, [name]: true }))
+
+    setForm((oldForm) => ({
+      ...oldForm,
+      [name]: value,
+    }))
+
+    setTouched((oldTouched) => ({
+      ...oldTouched,
+      [name]: true,
+    }))
   }
 
   function handleSubmit(event) {
     event.preventDefault()
-    setSubmitted(true)
+    setShowError(true)
 
-    if (hasErrors) {
+    if (Object.keys(errors).length > 0) {
       return
     }
 
-    const item = {
-      id: crypto.randomUUID(),
+    const newGadget = {
       ...form,
+      id: crypto.randomUUID(),
       healthRating: Number(form.healthRating),
       createdAt: new Date().toLocaleDateString(),
     }
 
-    setItems((current) => [...current, item])
-    setSelectedId(item.id)
+    setGadgets((oldGadgets) => [...oldGadgets, newGadget])
+    setSelectedId(newGadget.id)
     setView('table')
-    setForm(initialForm)
+    setForm(defaultForm)
     setTouched({})
-    setSubmitted(false)
+    setShowError(false)
   }
 
-  function fieldError(name) {
-    return (submitted || touched[name]) && errors[name] ? (
-      <span className="field-error">{errors[name]}</span>
-    ) : null
+  function errorMessage(field) {
+    if ((showError || touched[field]) && errors[field]) {
+      return <span className="field-error">{errors[field]}</span>
+    }
+
+    return null
+  }
+
+  function hasError(field) {
+    return Boolean((showError || touched[field]) && errors[field])
   }
 
   return (
@@ -153,10 +155,8 @@ function App() {
       <section className="workspace">
         <form className="registry-form" onSubmit={handleSubmit} noValidate>
           <div className="form-heading">
-            <div>
-              <h2>Gadget Registration</h2>
-            </div>
-            <span className="entry-count">{items.length} saved</span>
+            <h2>Gadget Registration</h2>
+            <span className="entry-count">{gadgets.length} saved</span>
           </div>
 
           <label>
@@ -164,11 +164,11 @@ function App() {
             <input
               name="gadgetName"
               value={form.gadgetName}
-              onChange={updateField}
+              onChange={handleChange}
               placeholder="Pixel Fold"
-              aria-invalid={Boolean((submitted || touched.gadgetName) && errors.gadgetName)}
+              aria-invalid={hasError('gadgetName')}
             />
-            {fieldError('gadgetName')}
+            {errorMessage('gadgetName')}
           </label>
 
           <label>
@@ -176,8 +176,8 @@ function App() {
             <select
               name="category"
               value={form.category}
-              onChange={updateField}
-              aria-invalid={Boolean((submitted || touched.category) && errors.category)}
+              onChange={handleChange}
+              aria-invalid={hasError('category')}
             >
               <option value="">Select category</option>
               {categories.map((category) => (
@@ -186,7 +186,7 @@ function App() {
                 </option>
               ))}
             </select>
-            {fieldError('category')}
+            {errorMessage('category')}
           </label>
 
           <label>
@@ -194,13 +194,11 @@ function App() {
             <input
               name="manufacturer"
               value={form.manufacturer}
-              onChange={updateField}
+              onChange={handleChange}
               placeholder="Google"
-              aria-invalid={Boolean(
-                (submitted || touched.manufacturer) && errors.manufacturer,
-              )}
+              aria-invalid={hasError('manufacturer')}
             />
-            {fieldError('manufacturer')}
+            {errorMessage('manufacturer')}
           </label>
 
           <label>
@@ -211,13 +209,11 @@ function App() {
               min="1"
               max="100"
               value={form.healthRating}
-              onChange={updateField}
+              onChange={handleChange}
               placeholder="92"
-              aria-invalid={Boolean(
-                (submitted || touched.healthRating) && errors.healthRating,
-              )}
+              aria-invalid={hasError('healthRating')}
             />
-            {fieldError('healthRating')}
+            {errorMessage('healthRating')}
           </label>
 
           <label>
@@ -225,11 +221,11 @@ function App() {
             <input
               name="techBrand"
               value={form.techBrand}
-              onChange={updateField}
+              onChange={handleChange}
               placeholder="Made by Google"
-              aria-invalid={Boolean((submitted || touched.techBrand) && errors.techBrand)}
+              aria-invalid={hasError('techBrand')}
             />
-            {fieldError('techBrand')}
+            {errorMessage('techBrand')}
           </label>
 
           <fieldset>
@@ -242,7 +238,7 @@ function App() {
                     name="userRole"
                     value={role}
                     checked={form.userRole === role}
-                    onChange={updateField}
+                    onChange={handleChange}
                   />
                   <span>{role}</span>
                 </label>
@@ -257,9 +253,8 @@ function App() {
 
         <section className="registry-panel">
           <div className="panel-toolbar">
-            <div>
-              <h2>Registry Table</h2>
-            </div>
+            <h2>Registry Table</h2>
+
             <div className="view-switch" aria-label="View controls">
               <button
                 type="button"
@@ -268,11 +263,12 @@ function App() {
               >
                 Form
               </button>
+
               <button
                 type="button"
                 className={view === 'table' ? 'active' : ''}
                 onClick={() => setView('table')}
-                disabled={!items.length}
+                disabled={gadgets.length === 0}
               >
                 Table
               </button>
@@ -282,10 +278,7 @@ function App() {
           <div className="filter-bar">
             <label>
               <span>Category Filter</span>
-              <select
-                value={categoryFilter}
-                onChange={(event) => setCategoryFilter(event.target.value)}
-              >
+              <select value={filter} onChange={(event) => setFilter(event.target.value)}>
                 <option value="All">All categories</option>
                 {categories.map((category) => (
                   <option key={category} value={category}>
@@ -294,20 +287,21 @@ function App() {
                 ))}
               </select>
             </label>
+
             <span className="filter-result">
-              {filteredItems.length} matching record
-              {filteredItems.length === 1 ? '' : 's'}
+              {filteredGadgets.length} matching record
+              {filteredGadgets.length === 1 ? '' : 's'}
             </span>
           </div>
 
-          {items.length && view === 'table' ? (
+          {gadgets.length > 0 && view === 'table' ? (
             <>
               <div className="table-wrap">
                 <table>
                   <thead>
-                    {table.getHeaderGroups().map((headerGroup) => (
-                      <tr key={headerGroup.id}>
-                        {headerGroup.headers.map((header) => (
+                    {table.getHeaderGroups().map((group) => (
+                      <tr key={group.id}>
+                        {group.headers.map((header) => (
                           <th key={header.id}>
                             {flexRender(
                               header.column.columnDef.header,
@@ -318,16 +312,12 @@ function App() {
                       </tr>
                     ))}
                   </thead>
+
                   <tbody>
                     {table.getRowModel().rows.map((row) => (
                       <tr
                         key={row.id}
-                        className={[
-                          row.original.id === selectedId ? 'selected' : '',
-                          row.original.category === categoryFilter ? 'filtered' : '',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
+                        className={row.original.id === selectedId ? 'selected' : ''}
                         onClick={() => setSelectedId(row.original.id)}
                       >
                         {row.getVisibleCells().map((cell) => (
@@ -346,12 +336,12 @@ function App() {
                 </table>
               </div>
 
-              {!filteredItems.length ? (
+              {filteredGadgets.length === 0 && (
                 <div className="empty-state compact">
                   <h3>No matching gadgets</h3>
                   <p>Change the filter to bring records back into the table.</p>
                 </div>
-              ) : null}
+              )}
 
               <div className="pagination-bar">
                 <button
@@ -361,10 +351,12 @@ function App() {
                 >
                   Previous
                 </button>
+
                 <span>
                   Page {table.getState().pagination.pageIndex + 1} of{' '}
                   {table.getPageCount()}
                 </span>
+
                 <button
                   type="button"
                   onClick={() => table.nextPage()}
@@ -377,49 +369,54 @@ function App() {
               <article className="detail-card">
                 <div>
                   <p className="eyebrow">Active Profile</p>
-                  <h2>{activeItem ? activeItem.gadgetName : 'Select a row'}</h2>
+                  <h2>
+                    {selectedGadget ? selectedGadget.gadgetName : 'Select a row'}
+                  </h2>
                 </div>
 
-                {activeItem ? (
+                {selectedGadget ? (
                   <>
-                    <span className="role-badge">{activeItem.userRole}</span>
+                    <span className="role-badge">{selectedGadget.userRole}</span>
+
                     <dl>
                       <div>
                         <dt>Category</dt>
-                        <dd>{activeItem.category}</dd>
+                        <dd>{selectedGadget.category}</dd>
                       </div>
+
                       <div>
                         <dt>Manufacturer</dt>
-                        <dd>{activeItem.manufacturer}</dd>
+                        <dd>{selectedGadget.manufacturer}</dd>
                       </div>
+
                       <div>
                         <dt>Health Rating</dt>
-                        <dd>{activeItem.healthRating}/100</dd>
+                        <dd>{selectedGadget.healthRating}/100</dd>
                       </div>
+
                       <div>
                         <dt>Tech Brand</dt>
-                        <dd>{activeItem.techBrand}</dd>
+                        <dd>{selectedGadget.techBrand}</dd>
                       </div>
+
                       <div>
                         <dt>Registered</dt>
-                        <dd>{activeItem.createdAt}</dd>
+                        <dd>{selectedGadget.createdAt}</dd>
                       </div>
                     </dl>
                   </>
                 ) : (
                   <p className="muted-text">
-                    Click a table row to sync the selected gadget into this
-                    profile card.
+                    Click a table row to sync the selected gadget into this profile
+                    card.
                   </p>
                 )}
               </article>
             </>
           ) : (
             <div className="empty-state">
-              <h3>{items.length ? 'Table ready' : 'No gadgets yet'}</h3>
-              <p>
-                Submit a valid gadget to open the paginated TanStack registry.
-              </p>
+              <h3>{gadgets.length ? 'Table ready' : 'No gadgets yet'}</h3>
+              <p>Submit a valid gadget to open the paginated TanStack registry.</p>
             </div>
           )}
         </section>
